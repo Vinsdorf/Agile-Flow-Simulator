@@ -32,6 +32,18 @@ export interface SimulationParameters {
   meeting_overhead: number;
   stakeholder_engagement: number;
   overtime_pressure: number;
+
+  // System parameters (meta-layer)
+  shared_mental_model_alignment: number;  // 0-100
+  theory_in_use_gap: number;              // 0-100
+  failure_perception: number;             // 0-100
+  output_vs_outcome_orientation: number;  // 0-100
+  push_vs_pull_paradigm: number;          // 0-100
+  predictive_vs_adaptive_planning: number;// 0-100
+  self_organization_level: number;        // 0-100
+  complexity_awareness: number;           // 0-100
+  feedback_loop_quality: number;          // 0-100
+  double_loop_learning: number;           // 0-100
 }
 
 export interface SimulationState {
@@ -75,6 +87,8 @@ export interface ParameterDefinition {
   step: number;
   unit?: string;
   format: ParameterFormat;
+  isNegative?: boolean;
+  isSystem?: boolean;
 }
 
 export interface ParameterGroup {

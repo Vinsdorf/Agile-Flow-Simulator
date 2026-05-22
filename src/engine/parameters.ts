@@ -1,5 +1,89 @@
 import { ParameterGroup, SimulationParameters } from './types';
 
+export const SYSTEM_PARAMETER_GROUPS: ParameterGroup[] = [
+  {
+    id: 'mental_models',
+    label: 'Mentální modely',
+    icon: '🧠',
+    parameters: [
+      {
+        key: 'shared_mental_model_alignment',
+        label: 'Sdílený mentální model',
+        description: 'Nakolik tým sdílí společné porozumění cíli produktu, zákazníkovi a tomu, jak systém funguje. Ovlivňuje: requirements_clarity (+), cross_functionality (+), scope_change_frequency (-), planning efektivitu (+).',
+        min: 0, max: 100, default: 40, step: 5, format: 'percent', isSystem: true,
+      },
+      {
+        key: 'theory_in_use_gap',
+        label: 'Propast teorie vs. praxe',
+        description: 'Rozdíl mezi tím, co tým říká že dělá, a co skutečně dělá (Argyris). Vysoká hodnota = velká propast = ŠPATNÉ. Degraduje skutečnou účinnost VŠECH procesních parametrů (DoD, code review, retro, plánování).',
+        min: 0, max: 100, default: 40, step: 5, format: 'percent', isNegative: true, isSystem: true,
+      },
+      {
+        key: 'failure_perception',
+        label: 'Vnímání selhání',
+        description: '0% = blame culture (selhání = hrozba). 100% = learning culture (selhání = data). Ovlivňuje: psychological_safety (+), learning_rate (+), viditelnost tech dluhu (+).',
+        min: 0, max: 100, default: 35, step: 5, format: 'percent', isSystem: true,
+      },
+    ],
+  },
+  {
+    id: 'paradigm_goals',
+    label: 'Paradigma & cíle',
+    icon: '🔄',
+    parameters: [
+      {
+        key: 'output_vs_outcome_orientation',
+        label: 'Output vs. Outcome orientace',
+        description: '0% = měříme počet stories. 100% = měříme dopad na uživatele. Outcome tým říká "ne" zbytečné práci → snižuje efektivní inflow, zvyšuje requirements_clarity.',
+        min: 0, max: 100, default: 30, step: 5, format: 'percent', isSystem: true,
+      },
+      {
+        key: 'push_vs_pull_paradigm',
+        label: 'Push vs. Pull systém',
+        description: '0% = práce se přiděluje shora (push). 100% = tým si sám tahá práci (pull/kanban). Ovlivňuje efektivitu WIP limitu zásadně — v push systému je WIP limit jen číslo.',
+        min: 0, max: 100, default: 30, step: 5, format: 'percent', isSystem: true,
+      },
+      {
+        key: 'predictive_vs_adaptive_planning',
+        label: 'Prediktivní vs. adaptivní',
+        description: '0% = detailní kvartální plán. 100% = plánujeme na horizont 1 sprintu. Ovlivňuje efektivitu planning_investment a reakci na scope_change.',
+        min: 0, max: 100, default: 35, step: 5, format: 'percent', isSystem: true,
+      },
+      {
+        key: 'self_organization_level',
+        label: 'Úroveň sebeorganizace',
+        description: '0% = centrální řízení. 100% = tým autonomně rozhoduje. Zkracuje reakční dobu, ale vyžaduje shared_mental_model_alignment — bez něj vede k chaosu.',
+        min: 0, max: 100, default: 35, step: 5, format: 'percent', isSystem: true,
+      },
+    ],
+  },
+  {
+    id: 'sensemaking',
+    label: 'Sensemaking',
+    icon: '🔍',
+    parameters: [
+      {
+        key: 'complexity_awareness',
+        label: 'Cynefin povědomí',
+        description: 'Schopnost rozlišit jasnou, komplikovanou a komplexní doménu. Nízká = tým analyzuje neanalyzovatelné. Ovlivňuje efektivitu planning_investment a defect_rate u komplexních stories.',
+        min: 0, max: 100, default: 30, step: 5, format: 'percent', isSystem: true,
+      },
+      {
+        key: 'feedback_loop_quality',
+        label: 'Kvalita feedback smyček',
+        description: 'Rychlost a přesnost informací o výsledcích. ZESILOVAČ všech feedback smyček — retro, review, testing fungují jen tak dobře, jak kvalitní je informace pod nimi.',
+        min: 0, max: 100, default: 40, step: 5, format: 'percent', isSystem: true,
+      },
+      {
+        key: 'double_loop_learning',
+        label: 'Dvojsmyčkové učení',
+        description: 'Single-loop = děláme věci líp. Double-loop = zpochybňujeme předpoklady. Každé 4 sprinty automaticky zlepšuje nejslabší procesní parametr týmu.',
+        min: 0, max: 100, default: 20, step: 5, format: 'percent', isSystem: true,
+      },
+    ],
+  },
+];
+
 export const PARAMETER_GROUPS: ParameterGroup[] = [
   {
     id: 'team',
@@ -207,4 +291,14 @@ export const DEFAULT_PARAMETERS: SimulationParameters = {
   meeting_overhead: 15,
   stakeholder_engagement: 50,
   overtime_pressure: 5,
+  shared_mental_model_alignment: 40,
+  theory_in_use_gap: 40,
+  failure_perception: 35,
+  output_vs_outcome_orientation: 30,
+  push_vs_pull_paradigm: 30,
+  predictive_vs_adaptive_planning: 35,
+  self_organization_level: 35,
+  complexity_awareness: 30,
+  feedback_loop_quality: 40,
+  double_loop_learning: 20,
 };

@@ -220,3 +220,148 @@ export function computeLearningDelta(
     0, 3
   );
 }
+
+export interface SystemModifiers {
+  // effective versions of existing params
+  eff_definition_of_done_strictness: number;
+  eff_code_review_thoroughness: number;
+  eff_retro_action_rate: number;
+  eff_planning_investment: number;
+  eff_test_automation: number;
+  eff_requirements_clarity: number;
+  eff_scope_change_frequency: number;
+  eff_cross_functionality: number;
+  eff_psychological_safety: number;
+  eff_inflow_rate: number;
+  eff_wip_limit: number;               // effective WIP considering push/pull
+  eff_stakeholder_engagement: number;
+  // computed modifiers for capacity/cycle time
+  context_switch_penalty: number;      // 0-0.2
+  self_org_benefit: number;            // 0-1
+  self_org_chaos_risk: number;         // 0-0.5
+  planning_efficiency_multiplier: number; // 0.6-1.4
+  complex_defect_multiplier: number;   // 1.0-1.2
+  planning_waste: number;              // 0-0.12 (fraction of planning that's wasted)
+}
+
+export function computeSystemModifiers(params: SimulationParameters): SystemModifiers {
+  const {
+    theory_in_use_gap,
+    shared_mental_model_alignment,
+    failure_perception,
+    output_vs_outcome_orientation,
+    push_vs_pull_paradigm,
+    predictive_vs_adaptive_planning,
+    self_organization_level,
+    complexity_awareness,
+    feedback_loop_quality,
+    team_size,
+  } = params;
+
+  // Theory-in-use gap: degrades ALL process param effectiveness
+  const process_effectiveness = 1 - (theory_in_use_gap / 100) * 0.7; // gap 100% → 30% effectiveness
+
+  // Shared mental model boosts requirements, reduces scope churn, improves cross-func
+  const mental_model_factor = shared_mental_model_alignment / 100;
+
+  // Failure perception → psychological safety, learning visibility
+  const failure_culture = failure_perception / 100;
+
+  // Output vs outcome → filters inflow, clarifies requirements
+  const outcome_factor = output_vs_outcome_orientation / 100;
+
+  // Push vs pull → WIP limit effectiveness, context switching
+  const pull_factor = push_vs_pull_paradigm / 100;
+  const wip_limit_effectiveness = 0.3 + pull_factor * 0.7;
+  const context_switch_penalty = (1 - pull_factor) * 0.2;
+
+  // Adaptive planning → planning efficiency
+  const adaptive_factor = predictive_vs_adaptive_planning / 100;
+  const planning_efficiency_multiplier = adaptive_factor > 0.5
+    ? 1.0 + (adaptive_factor - 0.5) * 0.4
+    : 0.6 + adaptive_factor * 0.8;
+
+  // Self-organization: benefit requires shared mental model; without it → chaos
+  const self_org_factor = self_organization_level / 100;
+  const self_org_chaos_risk = Math.max(0, self_org_factor - mental_model_factor) * 0.5;
+  const self_org_benefit = self_org_factor * mental_model_factor;
+
+  // Complexity awareness (Cynefin): ~40% of stories are complex
+  const cynefin_factor = complexity_awareness / 100;
+  const complex_story_ratio = 0.4;
+  const planning_waste = complex_story_ratio * (1 - cynefin_factor) * 0.3;
+  const complex_defect_multiplier = 1 + complex_story_ratio * (1 - cynefin_factor) * 0.5;
+
+  // Feedback loop quality: amplifier for all feedback mechanisms
+  const feedback_quality = feedback_loop_quality / 100;
+
+  // Compute effective parameters
+  const eff_definition_of_done_strictness = params.definition_of_done_strictness * process_effectiveness;
+  const eff_code_review = params.code_review_thoroughness * process_effectiveness * (0.5 + feedback_quality * 0.5);
+  const eff_retro = params.retro_action_rate * process_effectiveness * (0.4 + feedback_quality * 0.6);
+  const eff_planning = params.planning_investment * process_effectiveness * planning_efficiency_multiplier * (1 - planning_waste);
+  const eff_test_automation = params.test_automation * process_effectiveness * (0.6 + feedback_quality * 0.4);
+
+  const eff_requirements_clarity = clamp(
+    params.requirements_clarity + mental_model_factor * 30 + outcome_factor * 20,
+    0, 100
+  );
+  const eff_scope_change = params.scope_change_frequency
+    * (1 - mental_model_factor * 0.4)
+    * (1 - outcome_factor * 0.3);
+
+  const eff_cross_functionality = clamp(params.cross_functionality + mental_model_factor * 20, 0, 100);
+  const eff_psychological_safety = clamp(params.psychological_safety + failure_culture * 25, 0, 100);
+
+  const eff_inflow = params.inflow_rate_stories_per_sprint * (1 - outcome_factor * 0.4);
+
+  // In push system, effective WIP exceeds the stated limit
+  const eff_wip_limit = params.wip_limit + (1 - wip_limit_effectiveness) * team_size * 0.5;
+
+  const eff_stakeholder = params.stakeholder_engagement * (0.3 + feedback_quality * 0.7);
+
+  return {
+    eff_definition_of_done_strictness,
+    eff_code_review_thoroughness: eff_code_review,
+    eff_retro_action_rate: eff_retro,
+    eff_planning_investment: eff_planning,
+    eff_test_automation,
+    eff_requirements_clarity,
+    eff_scope_change_frequency: eff_scope_change,
+    eff_cross_functionality,
+    eff_psychological_safety,
+    eff_inflow_rate: eff_inflow,
+    eff_wip_limit,
+    eff_stakeholder_engagement: eff_stakeholder,
+    context_switch_penalty,
+    self_org_benefit,
+    self_org_chaos_risk,
+    planning_efficiency_multiplier,
+    complex_defect_multiplier,
+    planning_waste,
+  };
+}
+
+export function applyDoubleLoopLearning(params: SimulationParameters, sprint: number): SimulationParameters {
+  if (sprint % 4 !== 0 || sprint === 0) return params;
+  const improvement = (params.double_loop_learning / 100) * 2;
+  const tunable: Array<{ key: keyof SimulationParameters; optimal: number }> = [
+    { key: 'test_automation', optimal: 80 },
+    { key: 'ci_cd_maturity', optimal: 80 },
+    { key: 'code_review_thoroughness', optimal: 70 },
+    { key: 'retro_action_rate', optimal: 70 },
+    { key: 'refactoring_investment', optimal: 10 },
+  ];
+  type Candidate = { key: keyof SimulationParameters; optimal: number; val: number; gap: number };
+  const weakest = tunable.reduce<Candidate>((worst, p) => {
+    const val = params[p.key] as number;
+    const gap = Math.abs(p.optimal - val) / p.optimal;
+    return gap > worst.gap ? { key: p.key, optimal: p.optimal, val, gap } : worst;
+  }, { key: '' as keyof SimulationParameters, optimal: 0, val: 0, gap: -1 });
+  if (weakest.key && weakest.gap > 0.1) {
+    const val = params[weakest.key] as number;
+    const direction = weakest.optimal > val ? 1 : -1;
+    return { ...params, [weakest.key]: clamp(val + direction * improvement, 0, 100) };
+  }
+  return params;
+}
