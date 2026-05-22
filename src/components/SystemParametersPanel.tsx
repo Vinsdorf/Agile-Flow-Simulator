@@ -26,9 +26,7 @@ function SystemSlider({ param }: SystemSliderProps) {
   const percent = ((value - param.min) / (param.max - param.min)) * 100;
   const defaultPercent = ((defaultVal - param.min) / (param.max - param.min)) * 100;
 
-  const isNegative = param.isNegative === true;
-  const accentColor = isNegative ? '#ef4444' : '#6366f1';
-  const accentHover = isNegative ? '#dc2626' : '#4f46e5';
+  const accentColor = '#6366f1';
 
   return (
     <div className="mb-3">
@@ -40,19 +38,27 @@ function SystemSlider({ param }: SystemSliderProps) {
           >
             {param.label}
           </span>
-          {isNegative && (
-            <span className="text-xs px-1 py-0.5 rounded bg-red-900/40 text-red-400 border border-red-800/40">
-              ⚠ Vyšší = horší
-            </span>
-          )}
-          <button
-            className={`w-4 h-4 rounded-full text-xs flex items-center justify-center ${darkMode ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={() => setShowTooltip(false)}
-            onClick={() => setShowTooltip(!showTooltip)}
-          >
-            ?
-          </button>
+          <div className="relative">
+            <button
+              className={`w-4 h-4 rounded-full text-xs flex items-center justify-center ${darkMode ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
+              onMouseEnter={() => setShowTooltip(true)}
+              onMouseLeave={() => setShowTooltip(false)}
+              onClick={() => setShowTooltip((v) => !v)}
+            >
+              ?
+            </button>
+            {showTooltip && (
+              <div
+                className={`absolute bottom-full left-0 mb-1 z-50 w-64 text-xs p-2.5 rounded-lg leading-relaxed shadow-xl pointer-events-none ${
+                  darkMode
+                    ? 'bg-slate-800 text-slate-300 border border-slate-600'
+                    : 'bg-white text-slate-600 border border-indigo-200'
+                }`}
+              >
+                {param.description}
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-1">
           {isChanged && (
@@ -74,12 +80,6 @@ function SystemSlider({ param }: SystemSliderProps) {
         </div>
       </div>
 
-      {showTooltip && (
-        <div className={`text-xs p-2 rounded mb-2 leading-relaxed ${darkMode ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-indigo-50 text-slate-600 border border-indigo-100'}`}>
-          {param.description}
-        </div>
-      )}
-
       <div className="relative h-5 flex items-center">
         {/* Default marker */}
         <div
@@ -94,7 +94,7 @@ function SystemSlider({ param }: SystemSliderProps) {
           step={param.step}
           value={value}
           onChange={(e) => setParameter(param.key, Number(e.target.value))}
-          className={`w-full h-1.5 rounded-full appearance-none cursor-pointer ${isNegative ? 'system-slider-red' : 'system-slider-indigo'}`}
+          className="w-full h-1.5 rounded-full appearance-none cursor-pointer system-slider-indigo"
           style={{
             background: `linear-gradient(to right, ${isChanged ? accentColor : '#475569'} 0%, ${isChanged ? accentColor : '#475569'} ${percent}%, ${darkMode ? '#1e293b' : '#e2e8f0'} ${percent}%, ${darkMode ? '#1e293b' : '#e2e8f0'} 100%)`,
           }}
@@ -184,24 +184,6 @@ export function SystemParametersPanel() {
           background: #6366f1;
           cursor: pointer;
           border: 2px solid #4338ca;
-        }
-        .system-slider-red::-webkit-slider-thumb {
-          appearance: none;
-          width: 13px;
-          height: 13px;
-          border-radius: 50%;
-          background: #ef4444;
-          cursor: pointer;
-          border: 2px solid #b91c1c;
-          box-shadow: 0 0 0 2px rgba(239,68,68,0.25);
-        }
-        .system-slider-red::-moz-range-thumb {
-          width: 13px;
-          height: 13px;
-          border-radius: 50%;
-          background: #ef4444;
-          cursor: pointer;
-          border: 2px solid #b91c1c;
         }
       `}</style>
     </div>
