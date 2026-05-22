@@ -15,6 +15,7 @@ import { FlowStabilityChart } from './Charts/FlowStabilityChart';
 import { VelocityForecastChart } from './Charts/VelocityForecastChart';
 import { ComparisonView } from './ComparisonView';
 import { InsightsBar } from './InsightsBar';
+import { SystemParametersPanel } from './SystemParametersPanel';
 
 const TABS = [
   { id: 'throughput', label: 'Throughput' },
@@ -224,6 +225,9 @@ export function SimulatorLayout() {
               {activeTab === 'forecast' && <VelocityForecastChart />}
             </div>
           </div>
+
+          {/* System Parameters panel */}
+          <SystemParametersPanel />
 
           {/* Insights bar at bottom */}
           <InsightsBar />

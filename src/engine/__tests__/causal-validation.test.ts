@@ -239,3 +239,70 @@ describe('Causal validation: parameter direction tests', () => {
   });
 
 });
+
+describe('System parameters — causal validation', () => {
+  function runWithOverrides(overrides: Partial<SimulationParameters>) {
+    return runSimulation({ ...DEFAULT_PARAMETERS, ...overrides });
+  }
+  function avgThroughputRange(metrics: SprintMetrics[], from: number, to: number) {
+    return metrics.slice(from, to).reduce((s, m) => s + m.throughput, 0) / (to - from);
+  }
+  function finalBacklog(metrics: SprintMetrics[]) { return metrics[metrics.length - 1].backlog_size; }
+  function avgWip(metrics: SprintMetrics[]) {
+    return metrics.reduce((s, m) => s + m.wip_items, 0) / metrics.length;
+  }
+
+  test('theory_in_use_gap high → throughput lower', () => {
+    const low = runWithOverrides({ theory_in_use_gap: 5 });
+    const high = runWithOverrides({ theory_in_use_gap: 90 });
+    expect(avgLast10Throughput(low)).toBeGreaterThan(avgLast10Throughput(high));
+  });
+
+  test('theory_in_use_gap high → defect_rate higher', () => {
+    const low = runWithOverrides({ theory_in_use_gap: 5 });
+    const high = runWithOverrides({ theory_in_use_gap: 90 });
+    expect(avgLast10DefectRate(high)).toBeGreaterThan(avgLast10DefectRate(low));
+  });
+
+  test('shared_mental_model high → cycle_time lower', () => {
+    const low = runWithOverrides({ shared_mental_model_alignment: 10 });
+    const high = runWithOverrides({ shared_mental_model_alignment: 90 });
+    expect(avgLast10CycleTime(high)).toBeLessThan(avgLast10CycleTime(low));
+  });
+
+  test('outcome_orientation high → backlog grows slower', () => {
+    const low = runWithOverrides({ output_vs_outcome_orientation: 5 });
+    const high = runWithOverrides({ output_vs_outcome_orientation: 95 });
+    expect(finalBacklog(high)).toBeLessThan(finalBacklog(low));
+  });
+
+  test('pull_paradigm high → avg wip closer to limit', () => {
+    const push = runWithOverrides({ push_vs_pull_paradigm: 5 });
+    const pull = runWithOverrides({ push_vs_pull_paradigm: 95 });
+    const pushOverflow = avgWip(push) - DEFAULT_PARAMETERS.wip_limit;
+    const pullOverflow = avgWip(pull) - DEFAULT_PARAMETERS.wip_limit;
+    expect(pullOverflow).toBeLessThan(pushOverflow);
+  });
+
+  test('self_org without shared_model → cycle_time higher than with shared_model', () => {
+    const selfOrgOnly = runWithOverrides({ self_organization_level: 90, shared_mental_model_alignment: 10 });
+    const balanced = runWithOverrides({ self_organization_level: 90, shared_mental_model_alignment: 90 });
+    expect(avgLast10CycleTime(selfOrgOnly)).toBeGreaterThan(avgLast10CycleTime(balanced));
+  });
+
+  test('feedback_loop_quality high → defect_rate lower', () => {
+    const low = runWithOverrides({ feedback_loop_quality: 10 });
+    const high = runWithOverrides({ feedback_loop_quality: 90 });
+    expect(avgLast10DefectRate(high)).toBeLessThan(avgLast10DefectRate(low));
+  });
+
+  test('double_loop_learning: high double_loop learning leads to better late throughput than low', () => {
+    // Use a balanced inflow so both runs are stable, double_loop_learning effect is visible
+    const baseParams = { ...DEFAULT_PARAMETERS, inflow_rate_stories_per_sprint: 8 };
+    const low = runSimulation({ ...baseParams, double_loop_learning: 5 });
+    const high = runSimulation({ ...baseParams, double_loop_learning: 80 });
+    const lateLow = avgThroughputRange(low, 42, 52);
+    const lateHigh = avgThroughputRange(high, 42, 52);
+    expect(lateHigh).toBeGreaterThan(lateLow);
+  });
+});
