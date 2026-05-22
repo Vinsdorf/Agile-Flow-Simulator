@@ -35,6 +35,7 @@ export function runSimulation(params: SimulationParameters): SprintMetrics[] {
       state.team_energy,
       state.technical_debt,
       toolingCumulativeLevel,
+      state.knowledge_level,
     );
 
     const defectEscapeRate = computeDefectEscapeRate(params);
@@ -83,9 +84,11 @@ export function runSimulation(params: SimulationParameters): SprintMetrics[] {
     const throughput = Math.max(0, actualCompleted);
     throughputHistory.push(throughput);
 
-    // Cycle time via Little's Law: avg WIP / completion rate
+    // Cycle time via Little's Law: avg WIP / completion rate, scaled by sprint length
     const avgWip = clamp(state.wip_items, 0.1, 999);
-    const cycleTime = completionRate > 0 ? avgWip / completionRate : params.sprint_length_days;
+    const cycleTime = completionRate > 0
+      ? (avgWip / completionRate) * (params.sprint_length_days / 14)
+      : params.sprint_length_days;
 
     // Flow stability: inverse of coefficient of variation over last 6 sprints
     const recentThroughput = throughputHistory.slice(-6);

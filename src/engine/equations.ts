@@ -70,6 +70,7 @@ export function computeEffectiveCapacity(
   teamEnergy: number,
   technicalDebt: number,
   toolingCumulativeLevel: number,
+  knowledgeLevel: number,
 ): number {
   const {
     team_size,
@@ -81,11 +82,19 @@ export function computeEffectiveCapacity(
     planning_investment,
     cross_functionality,
     overtime_pressure,
+    ci_cd_maturity,
+    refactoring_investment,
+    definition_of_done_strictness,
+    code_review_thoroughness,
+    sprint_length_days,
   } = params;
 
   const baseCapacity = team_size * CONSTANTS.base_productivity_per_person;
   const toolingBoost = 1 + Math.min(toolingCumulativeLevel * CONSTANTS.tooling_cumulative_factor, 0.3);
   const overtimeBoost = 1 + (overtime_pressure / 100) * 0.3; // short-term boost
+
+  // Fix 3: sprint_length_days — shorter sprints = more ceremony overhead per unit of work
+  const sprintLengthFactor = clamp(1.0 - (sprint_length_days - 14) / 140, 0.9, 1.0);
 
   const capacity =
     baseCapacity
@@ -101,7 +110,13 @@ export function computeEffectiveCapacity(
     * (1 - technicalDebtDrag(technicalDebt))
     * (1 - CONSTANTS.sprint_ceremony_overhead)
     * toolingBoost
-    * overtimeBoost;
+    * overtimeBoost
+    * (1 + (ci_cd_maturity / 100) * 0.25)            // Fix 1: up to +25% capacity from CI/CD
+    * (1 + (knowledgeLevel / 100) * 0.15)             // Fix 2: up to +15% from team knowledge
+    * sprintLengthFactor                               // Fix 3: sprint ceremony overhead
+    * (1 - refactoring_investment / 100)              // Fix 5: refactoring diverts capacity from features
+    * (1 - (definition_of_done_strictness / 100) * 0.08)  // Fix 9: max -8% from strict DoD
+    * (1 - (code_review_thoroughness / 100) * 0.06); // Fix 10: max -6% from thorough reviews
 
   return clamp(capacity, 1, 200);
 }
@@ -113,6 +128,9 @@ export function computeDefectEscapeRate(params: SimulationParameters): number {
     requirements_clarity,
     scope_change_frequency,
     definition_of_done_strictness,
+    ci_cd_maturity,
+    seniority_ratio,
+    avg_story_complexity,
   } = params;
 
   // DoD strictness must be > 0 to avoid division issues
@@ -124,7 +142,10 @@ export function computeDefectEscapeRate(params: SimulationParameters): number {
     * (1 - (code_review_thoroughness / 100) * 0.3)
     * (1 - (requirements_clarity / 100) * 0.4)
     * (1 + (scope_change_frequency / 100) * 0.5)
-    / dodFactor;
+    / dodFactor
+    * (1 - (ci_cd_maturity / 100) * 0.2)             // Fix 1: up to -20% defects from CI/CD
+    * (1 - (seniority_ratio / 100) * 0.25)           // Fix 4: up to -25% defects from senior devs
+    * (1 + Math.max(0, (avg_story_complexity - 3) / 10) * 0.3); // Fix 6: complex stories produce more defects
 
   return clamp(rate, 0.01, 0.8);
 }
@@ -155,7 +176,15 @@ export function computeEnergyDelta(
   teamEnergy: number,
   wipItems: number,
 ): number {
-  const { overtime_pressure, wip_limit, psychological_safety, retro_action_rate, scope_change_frequency } = params;
+  const {
+    overtime_pressure,
+    wip_limit,
+    psychological_safety,
+    retro_action_rate,
+    scope_change_frequency,
+    meeting_overhead,
+    inflow_rate_stories_per_sprint,
+  } = params;
 
   const overloadPenalty = wipItems > wip_limit * 1.5 ? 3 : 0;
   const scopeEffect = scope_change_frequency < 10 ? 1 : -(scope_change_frequency / 100) * 8;
@@ -167,7 +196,9 @@ export function computeEnergyDelta(
     + (psychological_safety / 100) * 1.5
     + (retro_action_rate / 100) * 0.5
     + scopeEffect
-    + naturalRecovery,
+    + naturalRecovery
+    - (meeting_overhead / 100) * 3                                          // Fix 7: up to -3 energy/sprint from meetings
+    - Math.max(0, (inflow_rate_stories_per_sprint - 12) / 20) * 2,         // Fix 8: high inflow pressure
     -10, 6
   );
 }
