@@ -30,6 +30,7 @@ export function SimulatorLayout() {
   const activeTab = useSimulationStore((s) => s.activeTab);
   const setActiveTab = useSimulationStore((s) => s.setActiveTab);
   const [leftOpen, setLeftOpen] = useState(true);
+  const [infoOpen, setInfoOpen] = useState(true);
 
   const lastMetric = metrics[metrics.length - 1];
 
@@ -54,6 +55,19 @@ export function SimulatorLayout() {
             <span className={`text-xs px-2 py-0.5 rounded-full hidden sm:block ${darkMode ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
               System Dynamics
             </span>
+            <button
+              className={`w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center border transition-colors ${
+                infoOpen
+                  ? 'bg-blue-600 border-blue-500 text-white'
+                  : darkMode
+                  ? 'border-slate-600 text-slate-400 hover:border-slate-400 hover:text-slate-200'
+                  : 'border-slate-300 text-slate-400 hover:border-slate-500 hover:text-slate-700'
+              }`}
+              onClick={() => setInfoOpen(!infoOpen)}
+              title="Zobrazit/skrýt popis simulace"
+            >
+              ?
+            </button>
           </div>
         </div>
 
@@ -99,6 +113,51 @@ export function SimulatorLayout() {
           </button>
         </div>
       </header>
+
+      {/* Info banner */}
+      {infoOpen && (
+        <div className={`flex-shrink-0 border-b px-4 py-3 ${darkMode ? 'bg-slate-900/60 border-slate-700/60' : 'bg-blue-50 border-blue-100'}`}>
+          <div className="flex items-start justify-between gap-4 max-w-6xl">
+            <div className="flex items-start gap-3 min-w-0">
+              <span className="text-lg flex-shrink-0 mt-0.5">🔄</span>
+              <div className="min-w-0">
+                <p className={`text-sm font-semibold mb-1 ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                  Simulátor systémové dynamiky agilního týmu
+                </p>
+                <p className={`text-xs leading-relaxed mb-2 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                  Pohybuj slidery vlevo a sleduj v reálném čase, jak rozhodnutí o týmu, procesech a technických praktikách ovlivňují
+                  výkonnost za celý rok. Každá změna se okamžitě projeví ve všech grafech.
+                </p>
+                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  {[
+                    { icon: '🏗️', text: 'Zkus přidat lidi do týmu — uvidíš Brooksův zákon v akci' },
+                    { icon: '⚙️', text: 'Sniž WIP limit a sleduj, jak klesne cycle time (Little\'s Law)' },
+                    { icon: '🔧', text: 'Nulové testy + nulový refaktoring = tech debt spirála' },
+                    { icon: '🧠', text: 'Zapni přesčasy — krátkodobě pomůže, dlouhodobě tým vyhoří' },
+                  ].map(({ icon, text }) => (
+                    <span key={text} className={`flex items-start gap-1 text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                      <span className="flex-shrink-0">{icon}</span>
+                      <span>{text}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-start gap-2 flex-shrink-0 mt-0.5">
+              <span className={`text-xs hidden lg:block ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                Začni výběrem scénáře ↙
+              </span>
+              <button
+                className={`text-sm leading-none p-1 rounded hover:opacity-70 transition-opacity ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}
+                onClick={() => setInfoOpen(false)}
+                title="Zavřít (znovu otevřít tlačítkem ?)"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
