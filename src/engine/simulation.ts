@@ -8,8 +8,6 @@ import {
 } from './equations';
 import { clamp, coefficientOfVariation, linearRegression } from '@/utils/math';
 
-const SPRINTS = 52;
-
 const INITIAL_STATE: SimulationState = {
   backlog_size: 30,
   wip_items: 8,
@@ -20,14 +18,14 @@ const INITIAL_STATE: SimulationState = {
   defect_backlog: 5,
 };
 
-export function runSimulation(params: SimulationParameters): SprintMetrics[] {
+export function runSimulation(params: SimulationParameters, sprints = 52): SprintMetrics[] {
   const state = { ...INITIAL_STATE };
   const metrics: SprintMetrics[] = [];
 
   let toolingCumulativeLevel = 0;
   const throughputHistory: number[] = [];
 
-  for (let sprint = 1; sprint <= SPRINTS; sprint++) {
+  for (let sprint = 1; sprint <= sprints; sprint++) {
     toolingCumulativeLevel += params.tooling_investment;
 
     const effectiveCapacity = computeEffectiveCapacity(

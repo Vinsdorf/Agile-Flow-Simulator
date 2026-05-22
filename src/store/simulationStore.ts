@@ -13,6 +13,9 @@ interface Snapshot {
   metrics: SprintMetrics[];
 }
 
+export const SPRINT_HORIZONS = [12, 26, 52, 104] as const;
+export type SprintHorizon = (typeof SPRINT_HORIZONS)[number];
+
 interface SimulationStore {
   parameters: SimulationParameters;
   metrics: SprintMetrics[];
@@ -21,6 +24,7 @@ interface SimulationStore {
   comparisonSnapshot: Snapshot | null;
   activeTab: string;
   darkMode: boolean;
+  sprintHorizon: SprintHorizon;
 
   setParameter: (key: keyof SimulationParameters, value: number) => void;
   setPreset: (parameters: SimulationParameters) => void;
@@ -30,17 +34,19 @@ interface SimulationStore {
   removeSnapshot: (id: string) => void;
   setActiveTab: (tab: string) => void;
   toggleDarkMode: () => void;
+  setSprintHorizon: (horizon: SprintHorizon) => void;
 }
 
-function computeState(params: SimulationParameters) {
-  const metrics = runSimulation(params);
+function computeState(params: SimulationParameters, sprints: number) {
+  const metrics = runSimulation(params, sprints);
   const insights = generateInsights(params, metrics);
   return { metrics, insights };
 }
 
 export const useSimulationStore = create<SimulationStore>((set, get) => {
   const initialParams = DEFAULT_PARAMETERS as SimulationParameters;
-  const { metrics, insights } = computeState(initialParams);
+  const initialHorizon: SprintHorizon = 52;
+  const { metrics, insights } = computeState(initialParams, initialHorizon);
 
   return {
     parameters: initialParams,
@@ -50,22 +56,29 @@ export const useSimulationStore = create<SimulationStore>((set, get) => {
     comparisonSnapshot: null,
     activeTab: 'throughput',
     darkMode: true,
+    sprintHorizon: initialHorizon,
 
     setParameter: (key, value) => {
       const params = { ...get().parameters, [key]: value };
-      const { metrics, insights } = computeState(params);
+      const { metrics, insights } = computeState(params, get().sprintHorizon);
       set({ parameters: params, metrics, insights });
     },
 
     setPreset: (parameters) => {
-      const { metrics, insights } = computeState(parameters);
+      const { metrics, insights } = computeState(parameters, get().sprintHorizon);
       set({ parameters, metrics, insights });
     },
 
     resetParameters: () => {
       const params = DEFAULT_PARAMETERS as SimulationParameters;
-      const { metrics, insights } = computeState(params);
+      const { metrics, insights } = computeState(params, get().sprintHorizon);
       set({ parameters: params, metrics, insights });
+    },
+
+    setSprintHorizon: (horizon) => {
+      const { parameters } = get();
+      const { metrics, insights } = computeState(parameters, horizon);
+      set({ sprintHorizon: horizon, metrics, insights });
     },
 
     saveSnapshot: (label) => {

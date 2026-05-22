@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useSimulationStore } from '@/store/simulationStore';
+import { useSimulationStore, SPRINT_HORIZONS, SprintHorizon } from '@/store/simulationStore';
 import { PARAMETER_GROUPS } from '@/engine/parameters';
 import { ParameterGroup } from './ParameterPanel/ParameterGroup';
 import { PresetSelector } from './ParameterPanel/PresetSelector';
@@ -26,7 +26,7 @@ const TABS = [
 ];
 
 export function SimulatorLayout() {
-  const { resetParameters, darkMode, toggleDarkMode, metrics } = useSimulationStore();
+  const { resetParameters, darkMode, toggleDarkMode, metrics, sprintHorizon, setSprintHorizon } = useSimulationStore();
   const activeTab = useSimulationStore((s) => s.activeTab);
   const setActiveTab = useSimulationStore((s) => s.setActiveTab);
   const [leftOpen, setLeftOpen] = useState(true);
@@ -58,9 +58,29 @@ export function SimulatorLayout() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Sprint horizon selector */}
+          <div className={`flex items-center rounded-lg border overflow-hidden text-xs ${darkMode ? 'border-slate-600' : 'border-slate-300'}`}>
+            {SPRINT_HORIZONS.map((h) => (
+              <button
+                key={h}
+                className={`px-2.5 py-1.5 transition-colors ${
+                  sprintHorizon === h
+                    ? 'bg-blue-600 text-white font-semibold'
+                    : darkMode
+                    ? 'text-slate-400 hover:bg-slate-700'
+                    : 'text-slate-500 hover:bg-slate-100'
+                }`}
+                onClick={() => setSprintHorizon(h as SprintHorizon)}
+                title={`Simulovat ${h} sprintů`}
+              >
+                {h}
+              </button>
+            ))}
+          </div>
+
           {lastMetric && (
             <div className={`hidden md:flex items-center gap-3 text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'} mr-2`}>
-              <span>Sprint 52 | Score: <span className="font-bold text-blue-400">{lastMetric.flow_score}</span></span>
+              <span>Sprint {lastMetric.sprint} | Score: <span className="font-bold text-blue-400">{lastMetric.flow_score}</span></span>
               <span>Energie: <span className={`font-bold ${lastMetric.team_energy < 30 ? 'text-red-400' : 'text-green-400'}`}>{lastMetric.team_energy}%</span></span>
               <span>Dluh: <span className={`font-bold ${lastMetric.technical_debt > 60 ? 'text-red-400' : 'text-yellow-400'}`}>{lastMetric.technical_debt}%</span></span>
             </div>
